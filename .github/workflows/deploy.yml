@@ -94,19 +94,20 @@ jobs:
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ env.APP_DIR }}/
 
       - name: Install dependencies and restart
+        timeout-minutes: 5
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
             set -e
             cd /opt/applications/kam
 
             # Install production dependencies
-            npm ci --only=production
+            npm ci --omit=dev
 
             # Generate Prisma client
             npx prisma generate
 
-            # Run database migrations
-            npx prisma migrate deploy || echo "No migrations to run"
+            # Skip migrations - run manually when schema changes
+            # npx prisma migrate deploy
 
             # Restart with PM2
             pm2 stop kam 2>/dev/null || true
