@@ -7,7 +7,7 @@ set -e
 SERVER="ubuntu@44.211.71.114"
 SSH_KEY="~/.ssh/LightsailDefaultKey-us-east-1.pem"
 APP_DIR="/opt/applications/kam"
-APP_PORT=3002
+APP_PORT=3012
 DOMAIN="kam.chuckycastle.io"
 
 echo "Deploying KAM (Krieger Auction Manager)..."
@@ -61,7 +61,7 @@ cd /opt/applications/kam
 if [ ! -f .env ]; then
   cat > .env << 'EOF'
 NODE_ENV=production
-PORT=3002
+PORT=3012
 HOST=0.0.0.0
 
 # Database (Supabase)
@@ -114,7 +114,7 @@ server {
 
     # Health check endpoint
     location /health {
-        proxy_pass http://127.0.0.1:3002;
+        proxy_pass http://127.0.0.1:3012;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -123,7 +123,7 @@ server {
 
     # API routes
     location /api/ {
-        proxy_pass http://127.0.0.1:3002;
+        proxy_pass http://127.0.0.1:3012;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -145,7 +145,7 @@ server {
 
     # All other routes go to Express (server-rendered EJS templates)
     location / {
-        proxy_pass http://127.0.0.1:3002;
+        proxy_pass http://127.0.0.1:3012;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -183,7 +183,7 @@ ssh -i "$SSH_KEY" "$SERVER" "sudo ln -sf /etc/nginx/sites-available/kam /etc/ngi
 # Step 8: Health check
 echo "Running health check..."
 sleep 3
-ssh -i "$SSH_KEY" "$SERVER" "curl -f http://localhost:3002/health" || echo "Health check failed - check logs with: pm2 logs kam"
+ssh -i "$SSH_KEY" "$SERVER" "curl -f http://localhost:3012/health" || echo "Health check failed - check logs with: pm2 logs kam"
 
 echo ""
 echo "Deployment complete!"

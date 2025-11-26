@@ -7,7 +7,7 @@ on:
 
 env:
   APP_NAME: kam
-  APP_PORT: 3002
+  APP_PORT: 3012
   APP_DIR: /opt/applications/kam
 
 jobs:
@@ -116,7 +116,7 @@ jobs:
 
             # Health check
             sleep 3
-            curl -f http://localhost:3002/health || exit 1
+            curl -f http://localhost:3012/health || exit 1
 
             echo "Deployment completed successfully"
           ENDSSH
