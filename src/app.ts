@@ -51,6 +51,11 @@ export function createApp(): Express {
   // Optional auth for all routes (sets req.user if authenticated)
   app.use(optionalAuth);
 
+  // Health check endpoint
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // API routes
   app.use('/api', apiRoutes);
 
