@@ -1,0 +1,72 @@
+<%- include('../layouts/main', { body: `
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-5">
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <h2 class="text-center mb-4">Login</h2>
+
+            <div id="alert-container"></div>
+
+            <form id="login-form">
+              <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+              </div>
+
+              <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="remember">
+                <label class="form-check-label" for="remember">Remember me</label>
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+
+            <hr class="my-4">
+
+            <div class="text-center">
+              <a href="/forgot-password" class="text-muted">Forgot password?</a>
+            </div>
+
+            <div class="text-center mt-3">
+              <span class="text-muted">Don't have an account?</span>
+              <a href="/register">Register</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+`, scripts: `
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const alertContainer = document.getElementById('alert-container');
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          window.location.href = '/dashboard';
+        } else {
+          alertContainer.innerHTML = '<div class="alert alert-danger">' + (data.error?.message || 'Login failed') + '</div>';
+        }
+      } catch (error) {
+        alertContainer.innerHTML = '<div class="alert alert-danger">An error occurred. Please try again.</div>';
+      }
+    });
+  </script>
+` }) %>

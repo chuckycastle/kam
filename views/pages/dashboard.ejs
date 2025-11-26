@@ -1,0 +1,134 @@
+<%- include('../layouts/main', { body: `
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h2">Dashboard</h1>
+      <span class="text-muted">Welcome back, ${user.firstName}!</span>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0">
+                <div class="bg-primary bg-opacity-10 rounded p-3">
+                  <i class="bi bi-building text-primary fs-4"></i>
+                </div>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h6 class="text-muted mb-1">My Organizations</h6>
+                <h3 class="mb-0" id="my-orgs-count">-</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0">
+                <div class="bg-success bg-opacity-10 rounded p-3">
+                  <i class="bi bi-gift text-success fs-4"></i>
+                </div>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h6 class="text-muted mb-1">Items Received</h6>
+                <h3 class="mb-0" id="items-received-count">-</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0">
+                <div class="bg-warning bg-opacity-10 rounded p-3">
+                  <i class="bi bi-hourglass text-warning fs-4"></i>
+                </div>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h6 class="text-muted mb-1">Items Pending</h6>
+                <h3 class="mb-0" id="items-pending-count">-</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0">
+                <div class="bg-info bg-opacity-10 rounded p-3">
+                  <i class="bi bi-currency-dollar text-info fs-4"></i>
+                </div>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h6 class="text-muted mb-1">Total Value</h6>
+                <h3 class="mb-0" id="total-value">-</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">Recent Activity</h5>
+          </div>
+          <div class="card-body">
+            <div id="recent-activity">
+              <p class="text-muted">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">Quick Actions</h5>
+          </div>
+          <div class="card-body">
+            <div class="d-grid gap-2">
+              <a href="/organizations" class="btn btn-outline-primary">
+                <i class="bi bi-building me-2"></i> View Organizations
+              </a>
+              <a href="/items/new" class="btn btn-outline-success">
+                <i class="bi bi-plus-lg me-2"></i> Add Item
+              </a>
+              <a href="/reports" class="btn btn-outline-info">
+                <i class="bi bi-bar-chart me-2"></i> View Reports
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+`, scripts: `
+  <script>
+    async function loadDashboard() {
+      try {
+        const response = await fetch('/api/reports/dashboard');
+        const data = await response.json();
+
+        if (data.success) {
+          document.getElementById('my-orgs-count').textContent = data.data.organizations.assigned;
+          document.getElementById('items-received-count').textContent = data.data.items.received;
+          document.getElementById('items-pending-count').textContent = data.data.items.pending;
+          document.getElementById('total-value').textContent = '$' + Number(data.data.items.totalValue).toLocaleString();
+        }
+      } catch (error) {
+        console.error('Failed to load dashboard:', error);
+      }
+    }
+
+    loadDashboard();
+  </script>
+` }) %>

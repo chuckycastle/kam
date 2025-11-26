@@ -1,0 +1,92 @@
+<%- include('../layouts/main', { body: `
+  <section class="hero-section text-center">
+    <div class="container">
+      <h1 class="display-4 fw-bold mb-3">Krieger Auction Manager</h1>
+      <p class="lead mb-4">Manage your school auction with ease</p>
+      <div>
+        <a href="/login" class="btn btn-light btn-lg me-2">Login</a>
+        <a href="/register" class="btn btn-outline-light btn-lg">Register</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-5">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card stat-card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <i class="bi bi-building display-4 text-primary mb-3"></i>
+              <h5 class="card-title">Organization Management</h5>
+              <p class="card-text text-muted">Track donor organizations and manage solicitation efforts.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card stat-card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <i class="bi bi-gift display-4 text-success mb-3"></i>
+              <h5 class="card-title">Item Tracking</h5>
+              <p class="card-text text-muted">Record and track donated auction items with values and status.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card stat-card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+              <i class="bi bi-bar-chart display-4 text-warning mb-3"></i>
+              <h5 class="card-title">Reports & Analytics</h5>
+              <p class="card-text text-muted">View leaderboards, participation stats, and progress reports.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-light py-5">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <h2 class="fw-bold mb-3">Built for School Fundraising</h2>
+          <p class="text-muted mb-4">
+            KAM streamlines the auction planning process by helping volunteers
+            coordinate solicitation efforts, track donations, and measure progress
+            toward fundraising goals.
+          </p>
+          <ul class="list-unstyled">
+            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Assign organizations to volunteers</li>
+            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Track item donations in real-time</li>
+            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> View participation leaderboards</li>
+            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Generate progress reports</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <div class="bg-white p-4 rounded shadow-sm">
+            <div class="d-flex justify-content-between mb-3">
+              <span class="text-muted">Fundraising Progress</span>
+              <span class="fw-bold">75%</span>
+            </div>
+            <div class="progress" style="height: 20px;">
+              <div class="progress-bar bg-success" role="progressbar" style="width: 75%"></div>
+            </div>
+            <div class="row mt-4 text-center">
+              <div class="col-4">
+                <h4 class="mb-0">150</h4>
+                <small class="text-muted">Organizations</small>
+              </div>
+              <div class="col-4">
+                <h4 class="mb-0">320</h4>
+                <small class="text-muted">Items</small>
+              </div>
+              <div class="col-4">
+                <h4 class="mb-0">45</h4>
+                <small class="text-muted">Volunteers</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+` }) %>

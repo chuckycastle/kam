@@ -1,0 +1,104 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Build artifacts
+*.tgz
+*.tar.gz
+*.zip
+
+# Package manager files
+package-lock.json.bak
+
+# Docker
+docker-compose.override.yml
+
+# Local development (CLAUDE.md is in .gitignore per global standards)
+.claude/
+CLAUDE.md
+
+# TypeScript
+*.tsbuildinfo
+
+# Debug
+.pnp.*
+.pnp.js
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Optional cache directories
+.npm/
+.eslintcache
+.cache/
+.parcel-cache/
+
+# Optional npm files
+.npmrc.local
+
+# Secrets and credentials
+*.pem
+*.key
+credentials.json
+secrets.json

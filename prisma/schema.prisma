@@ -1,0 +1,139 @@
+// Krieger Auction Manager - Database Schema
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  COORDINATOR
+  VOLUNTEER
+  PUBLIC
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String    @map("password_hash")
+  firstName     String    @map("first_name")
+  lastName      String    @map("last_name")
+  role          Role      @default(VOLUNTEER)
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Self-referential relationship for supervisor
+  supervisor    User?     @relation("SupervisorRelation", fields: [supervisorId], references: [id])
+  supervisorId  String?   @map("supervisor_id")
+  subordinates  User[]    @relation("SupervisorRelation")
+
+  // Relations
+  organizations Organization[]
+  items         Item[]
+  notes         Note[]
+  messages      Message[]
+
+  @@map("users")
+}
+
+model Category {
+  id            String    @id @default(uuid())
+  title         String
+  description   String?
+
+  organizations Organization[]
+
+  @@map("categories")
+}
+
+model Organization {
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  url           String?
+  contactName   String?   @map("contact_name")
+  contactTitle  String?   @map("contact_title")
+  contactPhone  String?   @map("contact_phone")
+  contactEmail  String?   @map("contact_email")
+  isAvailable   Boolean   @default(true) @map("is_available")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  category      Category? @relation(fields: [categoryId], references: [id])
+  categoryId    String?   @map("category_id")
+  assignedTo    User?     @relation(fields: [assignedToId], references: [id])
+  assignedToId  String?   @map("assigned_to_id")
+  items         Item[]
+  notes         Note[]
+
+  @@map("organizations")
+}
+
+model Item {
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  value         Decimal?  @db.Decimal(10, 2)
+  quantity      Int       @default(1)
+  isReceived    Boolean   @default(false) @map("is_received")
+  receivedAt    DateTime? @map("received_at")
+  messageSent   Boolean   @default(false) @map("message_sent")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String     @map("organization_id")
+  createdBy     User       @relation(fields: [createdById], references: [id])
+  createdById   String     @map("created_by_id")
+
+  @@map("items")
+}
+
+model Note {
+  id            String    @id @default(uuid())
+  content       String
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String     @map("organization_id")
+  author        User       @relation(fields: [authorId], references: [id])
+  authorId      String     @map("author_id")
+
+  @@map("notes")
+}
+
+model Message {
+  id            String    @id @default(uuid())
+  subject       String
+  content       String
+  isRead        Boolean   @default(false) @map("is_read")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  recipient     User      @relation(fields: [recipientId], references: [id])
+  recipientId   String    @map("recipient_id")
+
+  @@map("messages")
+}
+
+model SchoolClass {
+  id            String    @id @default(uuid())
+  name          String
+  year          Int
+  parent1Id     String?   @map("parent1_id")
+  parent2Id     String?   @map("parent2_id")
+
+  @@map("school_classes")
+}
