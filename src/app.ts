@@ -3,7 +3,6 @@ import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
@@ -11,8 +10,7 @@ import { optionalAuth } from './middleware/auth.js';
 import apiRoutes from './routes/index.js';
 import { logger } from './utils/logger.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Using process.cwd() for paths since we run from the app directory
 
 export function createApp(): Express {
   const app = express();
@@ -44,11 +42,11 @@ export function createApp(): Express {
   });
 
   // Static files
-  app.use(express.static(path.join(__dirname, '../public')));
+  app.use(express.static(path.join(process.cwd(), 'public')));
 
   // View engine (EJS)
   app.set('view engine', 'ejs');
-  app.set('views', path.join(__dirname, '../views'));
+  app.set('views', path.join(process.cwd(), 'views'));
 
   // Optional auth for all routes (sets req.user if authenticated)
   app.use(optionalAuth);
