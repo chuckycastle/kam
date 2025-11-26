@@ -17,7 +17,16 @@ export function createApp(): Express {
 
   // Security middleware
   app.use(helmet({
-    contentSecurityPolicy: env.NODE_ENV === 'production',
+    contentSecurityPolicy: env.NODE_ENV === 'production' ? {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+        fontSrc: ["'self'", "https://cdn.jsdelivr.net"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+      },
+    } : false,
   }));
 
   // CORS
