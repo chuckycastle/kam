@@ -34,4 +34,7 @@ router.get(
   reportController.getUserActivity
 );
 
+// GET /api/reports/categories - List all categories
+router.get('/categories', reportController.getCategories);
+
 export default router;

@@ -16,26 +16,38 @@ export function createApp(): Express {
   const app = express();
 
   // Security middleware
-  app.use(helmet({
-    contentSecurityPolicy: env.NODE_ENV === 'production' ? {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-        fontSrc: ["'self'", "https://cdn.jsdelivr.net"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'"],
-      },
-    } : false,
-  }));
+  app.use(
+    helmet({
+      contentSecurityPolicy:
+        env.NODE_ENV === 'production'
+          ? {
+              directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+                styleSrc: [
+                  "'self'",
+                  "'unsafe-inline'",
+                  'https://cdn.jsdelivr.net',
+                ],
+                fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+                imgSrc: ["'self'", 'data:', 'https:'],
+                connectSrc: ["'self'"],
+              },
+            }
+          : false,
+    })
+  );
 
   // CORS
-  app.use(cors({
-    origin: env.NODE_ENV === 'production'
-      ? ['https://auction.kriegercenter.org']
-      : ['http://localhost:3000', 'http://localhost:5173'],
-    credentials: true,
-  }));
+  app.use(
+    cors({
+      origin:
+        env.NODE_ENV === 'production'
+          ? ['https://auction.kriegercenter.org']
+          : ['http://localhost:3000', 'http://localhost:5173'],
+      credentials: true,
+    })
+  );
 
   // Body parsing
   app.use(express.json({ limit: '10mb' }));
@@ -83,6 +95,13 @@ export function createApp(): Express {
     });
   });
 
+  app.get('/register', (_req, res) => {
+    res.render('pages/register', {
+      title: 'Register - KAM',
+      user: null,
+    });
+  });
+
   app.get('/dashboard', (req, res) => {
     if (!req.user) {
       res.redirect('/login');
@@ -90,6 +109,125 @@ export function createApp(): Express {
     }
     res.render('pages/dashboard', {
       title: 'Dashboard - KAM',
+      user: req.user,
+    });
+  });
+
+  // Organizations pages
+  app.get('/organizations', (req, res) => {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+    res.render('pages/organizations/list', {
+      title: 'Organizations - KAM',
+      user: req.user,
+    });
+  });
+
+  app.get('/organizations/new', (req, res) => {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+    res.render('pages/organizations/form', {
+      title: 'New Organization - KAM',
+      user: req.user,
+    });
+  });
+
+  app.get('/organizations/:id', (req, res) => {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+    res.render('pages/organizations/detail', {
+      title: 'Organization - KAM',
+      user: req.user,
+    });
+  });
+
+  app.get('/organizations/:id/edit', (req, res) => {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+    res.render('pages/organizations/form', {
+      title: 'Edit Organization - KAM',
+      user: req.user,
+    });
+  });
+
+  // Items pages
+  app.get('/items', (req, res) => {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+    res.render('pages/items/list', {
+      title: 'Items - KAM',
+      user: req.user,
+    });
+  });
+
+  app.get('/items/new', (req, res) => {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+    res.render('pages/items/form', {
+      title: 'New Item - KAM',
+      user: req.user,
+    });
+  });
+
+  app.get('/items/:id', (req, res) => {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+    res.render('pages/items/detail', {
+      title: 'Item - KAM',
+      user: req.user,
+    });
+  });
+
+  app.get('/items/:id/edit', (req, res) => {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+    res.render('pages/items/form', {
+      title: 'Edit Item - KAM',
+      user: req.user,
+    });
+  });
+
+  // Reports page
+  app.get('/reports', (req, res) => {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+    res.render('pages/reports', {
+      title: 'Reports - KAM',
+      user: req.user,
+    });
+  });
+
+  // Admin pages
+  app.get('/admin', (req, res) => {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+    // Check if user is admin
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'SUPER_ADMIN') {
+      res.redirect('/dashboard');
+      return;
+    }
+    res.render('pages/admin/index', {
+      title: 'Admin - KAM',
       user: req.user,
     });
   });

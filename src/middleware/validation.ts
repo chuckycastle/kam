@@ -8,7 +8,10 @@ interface ValidateOptions {
   target?: ValidationTarget;
 }
 
-export function validate<T>(schema: ZodSchema<T>, options: ValidateOptions = {}) {
+export function validate<T>(
+  schema: ZodSchema<T>,
+  options: ValidateOptions = {}
+) {
   const { target = 'body' } = options;
 
   return (req: Request, res: Response, next: NextFunction): void => {

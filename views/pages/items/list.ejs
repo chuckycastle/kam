@@ -1,0 +1,214 @@
+<%- include('../../layouts/main', { body: `
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h2">Items</h1>
+      <div>
+        <a href="/items/new" class="btn btn-primary">
+          <i class="bi bi-plus-lg me-1"></i> Add Item
+        </a>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <form id="filter-form" class="row g-3">
+          <div class="col-md-4">
+            <input type="text" class="form-control" id="search" placeholder="Search items...">
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="organization">
+              <option value="">All Organizations</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="status">
+              <option value="">All Status</option>
+              <option value="true">Received</option>
+              <option value="false">Pending</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-primary w-100">
+              <i class="bi bi-search"></i> Filter
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Items List -->
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Item</th>
+              <th>Organization</th>
+              <th>Value</th>
+              <th>Qty</th>
+              <th>Status</th>
+              <th>Created By</th>
+              <th>Date</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="items-table">
+            <tr>
+              <td colspan="8" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 mb-0 text-muted">Loading items...</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav id="pagination" class="mt-4 d-none">
+      <ul class="pagination justify-content-center">
+      </ul>
+    </nav>
+  </div>
+`, scripts: `
+  <script>
+    let currentPage = 1;
+    const limit = 20;
+
+    async function loadOrganizations() {
+      try {
+        const response = await fetch('/api/orgs?limit=100');
+        const data = await response.json();
+        if (data.success && data.data) {
+          const select = document.getElementById('organization');
+          data.data.forEach(org => {
+            const option = document.createElement('option');
+            option.value = org.id;
+            option.textContent = org.name;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load organizations:', error);
+      }
+    }
+
+    async function loadItems(page = 1) {
+      currentPage = page;
+      const search = document.getElementById('search').value;
+      const organizationId = document.getElementById('organization').value;
+      const isReceived = document.getElementById('status').value;
+
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(search && { search }),
+        ...(organizationId && { organizationId }),
+        ...(isReceived && { isReceived }),
+      });
+
+      try {
+        const response = await fetch('/api/items?' + params);
+        const data = await response.json();
+
+        const tbody = document.getElementById('items-table');
+
+        if (!data.success || !data.data?.length) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">No items found</td></tr>';
+          document.getElementById('pagination').classList.add('d-none');
+          return;
+        }
+
+        tbody.innerHTML = data.data.map(item => {
+          const statusBadge = item.isReceived
+            ? '<span class="badge bg-success">Received</span>'
+            : '<span class="badge bg-warning text-dark">Pending</span>';
+
+          const value = item.value ? '$' + Number(item.value).toLocaleString() : '-';
+          const date = new Date(item.createdAt).toLocaleDateString();
+          const creator = item.createdBy
+            ? item.createdBy.firstName + ' ' + item.createdBy.lastName
+            : '-';
+
+          return '<tr>' +
+            '<td><a href="/items/' + item.id + '" class="text-decoration-none fw-medium">' + escapeHtml(item.name) + '</a></td>' +
+            '<td><a href="/organizations/' + item.organization?.id + '" class="text-decoration-none">' + escapeHtml(item.organization?.name || '-') + '</a></td>' +
+            '<td>' + value + '</td>' +
+            '<td>' + (item.quantity || 1) + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td>' + escapeHtml(creator) + '</td>' +
+            '<td><small class="text-muted">' + date + '</small></td>' +
+            '<td class="text-end">' +
+              '<a href="/items/' + item.id + '" class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-eye"></i></a>' +
+              '<a href="/items/' + item.id + '/edit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+
+        // Pagination
+        if (data.meta && data.meta.totalPages > 1) {
+          renderPagination(data.meta);
+          document.getElementById('pagination').classList.remove('d-none');
+        } else {
+          document.getElementById('pagination').classList.add('d-none');
+        }
+      } catch (error) {
+        console.error('Failed to load items:', error);
+        document.getElementById('items-table').innerHTML =
+          '<tr><td colspan="8" class="text-center py-4 text-danger">Failed to load items</td></tr>';
+      }
+    }
+
+    function renderPagination(meta) {
+      const ul = document.querySelector('#pagination .pagination');
+      let html = '';
+
+      html += '<li class="page-item ' + (meta.page <= 1 ? 'disabled' : '') + '">' +
+        '<a class="page-link" href="#" data-page="' + (meta.page - 1) + '">Previous</a></li>';
+
+      for (let i = 1; i <= meta.totalPages; i++) {
+        if (i === 1 || i === meta.totalPages || (i >= meta.page - 2 && i <= meta.page + 2)) {
+          html += '<li class="page-item ' + (i === meta.page ? 'active' : '') + '">' +
+            '<a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+        } else if (i === meta.page - 3 || i === meta.page + 3) {
+          html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+      }
+
+      html += '<li class="page-item ' + (meta.page >= meta.totalPages ? 'disabled' : '') + '">' +
+        '<a class="page-link" href="#" data-page="' + (meta.page + 1) + '">Next</a></li>';
+
+      ul.innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    document.getElementById('filter-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      loadItems(1);
+    });
+
+    document.getElementById('pagination').addEventListener('click', (e) => {
+      e.preventDefault();
+      if (e.target.dataset.page) {
+        loadItems(parseInt(e.target.dataset.page));
+      }
+    });
+
+    // Check for orgId in URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const orgId = urlParams.get('orgId');
+    if (orgId) {
+      document.getElementById('organization').value = orgId;
+    }
+
+    loadOrganizations();
+    loadItems();
+  </script>
+` }) %>

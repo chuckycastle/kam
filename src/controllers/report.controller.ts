@@ -11,19 +11,14 @@ export async function getDashboard(
     const userId = req.user?.id || '';
     void userId; // Acknowledge req usage
 
-    const [
-      totalOrgs,
-      myOrgs,
-      totalItems,
-      receivedItems,
-      pendingItems,
-    ] = await Promise.all([
-      prisma.organization.count(),
-      prisma.organization.count({ where: { assignedToId: userId } }),
-      prisma.item.count(),
-      prisma.item.count({ where: { isReceived: true } }),
-      prisma.item.count({ where: { isReceived: false } }),
-    ]);
+    const [totalOrgs, myOrgs, totalItems, receivedItems, pendingItems] =
+      await Promise.all([
+        prisma.organization.count(),
+        prisma.organization.count({ where: { assignedToId: userId } }),
+        prisma.item.count(),
+        prisma.item.count({ where: { isReceived: true } }),
+        prisma.item.count({ where: { isReceived: false } }),
+      ]);
 
     // Calculate total value
     const valueResult = await prisma.item.aggregate({
@@ -111,7 +106,9 @@ export async function getItemsSummary(
         take: 10,
         include: {
           organization: { select: { name: true } },
-          createdBy: { select: { username: true, firstName: true, lastName: true } },
+          createdBy: {
+            select: { username: true, firstName: true, lastName: true },
+          },
         },
       }),
     ]);
@@ -119,7 +116,10 @@ export async function getItemsSummary(
     const summary = {
       received: byStatus.find((s) => s.isReceived)?._count || 0,
       pending: byStatus.find((s) => !s.isReceived)?._count || 0,
-      totalValue: byStatus.reduce((acc, s) => acc + Number(s._sum.value || 0), 0),
+      totalValue: byStatus.reduce(
+        (acc, s) => acc + Number(s._sum.value || 0),
+        0
+      ),
       recentItems,
     };
 
@@ -149,7 +149,10 @@ export async function getCategoryBreakdown(
       id: cat.id,
       title: cat.title,
       organizationCount: cat.organizations.length,
-      itemCount: cat.organizations.reduce((acc, org) => acc + org._count.items, 0),
+      itemCount: cat.organizations.reduce(
+        (acc, org) => acc + org._count.items,
+        0
+      ),
     }));
 
     sendSuccess(res, breakdown);
@@ -198,6 +201,36 @@ export async function getUserActivity(
     }));
 
     sendSuccess(res, activity);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getCategories(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const categories = await prisma.category.findMany({
+      orderBy: { title: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        _count: { select: { organizations: true } },
+      },
+    });
+
+    // Map title to name for frontend consistency
+    const mappedCategories = categories.map((cat) => ({
+      id: cat.id,
+      name: cat.title,
+      description: cat.description,
+      organizationCount: cat._count.organizations,
+    }));
+
+    sendSuccess(res, mappedCategories);
   } catch (error) {
     next(error);
   }

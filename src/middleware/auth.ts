@@ -35,7 +35,10 @@ export async function requireAuth(
     }
 
     // Verify token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
 
     if (error || !user) {
       sendUnauthorized(res, 'Invalid or expired token');
@@ -70,7 +73,9 @@ export async function optionalAuth(
       : req.cookies?.['kam.token'];
 
     if (token) {
-      const { data: { user } } = await supabase.auth.getUser(token);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser(token);
 
       if (user) {
         const role = (user.user_metadata?.role as Role) || 'VOLUNTEER';

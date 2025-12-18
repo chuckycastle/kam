@@ -1,0 +1,212 @@
+<%- include('../../layouts/main', { body: `
+  <div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/organizations">Organizations</a></li>
+        <li class="breadcrumb-item active" id="breadcrumb-title">New Organization</li>
+      </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white">
+            <h4 class="mb-0" id="form-title">New Organization</h4>
+          </div>
+          <div class="card-body">
+            <div id="alert-container"></div>
+
+            <form id="org-form">
+              <div class="mb-3">
+                <label for="name" class="form-label">Organization Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="url" class="form-label">Website URL</label>
+                <input type="url" class="form-control" id="url" name="url" placeholder="https://...">
+              </div>
+
+              <div class="mb-3">
+                <label for="categoryId" class="form-label">Category <span class="text-danger">*</span></label>
+                <select class="form-select" id="categoryId" name="categoryId" required>
+                  <option value="">Select a category...</option>
+                </select>
+              </div>
+
+              <hr class="my-4">
+              <h5 class="mb-3">Contact Information</h5>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="contactName" class="form-label">Contact Name <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="contactName" name="contactName" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="contactTitle" class="form-label">Title</label>
+                  <input type="text" class="form-control" id="contactTitle" name="contactTitle">
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="contactPhone" class="form-label">Phone <span class="text-danger">*</span></label>
+                  <input type="tel" class="form-control" id="contactPhone" name="contactPhone" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="contactEmail" class="form-label">Email</label>
+                  <input type="email" class="form-control" id="contactEmail" name="contactEmail">
+                </div>
+              </div>
+
+              <hr class="my-4">
+
+              <div class="mb-4">
+                <label for="assignedToId" class="form-label">Assign To</label>
+                <select class="form-select" id="assignedToId" name="assignedToId">
+                  <option value="">Leave unassigned</option>
+                </select>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" id="submit-btn">
+                  <span id="btn-text">Create Organization</span>
+                  <span id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                </button>
+                <a href="/organizations" class="btn btn-outline-secondary">Cancel</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+`, scripts: `
+  <script>
+    const pathParts = window.location.pathname.split('/');
+    const isEdit = pathParts[3] === 'edit';
+    const orgId = isEdit ? pathParts[2] : null;
+
+    async function loadFormData() {
+      // Load categories
+      try {
+        const catResponse = await fetch('/api/reports/categories');
+        const catData = await catResponse.json();
+        if (catData.success && catData.data) {
+          const select = document.getElementById('categoryId');
+          catData.data.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.id;
+            option.textContent = cat.name;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      }
+
+      // Load users for assignment
+      try {
+        const usersResponse = await fetch('/api/users');
+        const usersData = await usersResponse.json();
+        if (usersData.success && usersData.data) {
+          const select = document.getElementById('assignedToId');
+          usersData.data.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = user.firstName + ' ' + user.lastName + ' (' + user.username + ')';
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load users:', error);
+      }
+
+      // Load existing org data if editing
+      if (isEdit && orgId) {
+        document.getElementById('form-title').textContent = 'Edit Organization';
+        document.getElementById('breadcrumb-title').textContent = 'Edit';
+        document.getElementById('btn-text').textContent = 'Save Changes';
+
+        try {
+          const response = await fetch('/api/orgs/' + orgId);
+          const data = await response.json();
+
+          if (data.success && data.data) {
+            const org = data.data;
+            document.getElementById('name').value = org.name || '';
+            document.getElementById('description').value = org.description || '';
+            document.getElementById('url').value = org.url || '';
+            document.getElementById('categoryId').value = org.categoryId || '';
+            document.getElementById('contactName').value = org.contactName || '';
+            document.getElementById('contactTitle').value = org.contactTitle || '';
+            document.getElementById('contactPhone').value = org.contactPhone || '';
+            document.getElementById('contactEmail').value = org.contactEmail || '';
+            document.getElementById('assignedToId').value = org.assignedToId || '';
+          }
+        } catch (error) {
+          console.error('Failed to load organization:', error);
+        }
+      }
+    }
+
+    document.getElementById('org-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const alertContainer = document.getElementById('alert-container');
+      const submitBtn = document.getElementById('submit-btn');
+      const btnText = document.getElementById('btn-text');
+      const btnSpinner = document.getElementById('btn-spinner');
+
+      const formData = {
+        name: document.getElementById('name').value.trim(),
+        description: document.getElementById('description').value.trim() || null,
+        url: document.getElementById('url').value.trim() || null,
+        categoryId: document.getElementById('categoryId').value,
+        contactName: document.getElementById('contactName').value.trim(),
+        contactTitle: document.getElementById('contactTitle').value.trim() || null,
+        contactPhone: document.getElementById('contactPhone').value.trim(),
+        contactEmail: document.getElementById('contactEmail').value.trim() || null,
+        assignedToId: document.getElementById('assignedToId').value || null,
+      };
+
+      submitBtn.disabled = true;
+      btnText.textContent = isEdit ? 'Saving...' : 'Creating...';
+      btnSpinner.classList.remove('d-none');
+      alertContainer.innerHTML = '';
+
+      try {
+        const url = isEdit ? '/api/orgs/' + orgId : '/api/orgs';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          window.location.href = '/organizations/' + (data.data?.id || orgId);
+        } else {
+          alertContainer.innerHTML = '<div class="alert alert-danger">' +
+            (data.error?.message || 'Failed to save organization') + '</div>';
+        }
+      } catch (error) {
+        alertContainer.innerHTML = '<div class="alert alert-danger">An error occurred. Please try again.</div>';
+      } finally {
+        submitBtn.disabled = false;
+        btnText.textContent = isEdit ? 'Save Changes' : 'Create Organization';
+        btnSpinner.classList.add('d-none');
+      }
+    });
+
+    loadFormData();
+  </script>
+` }) %>

@@ -15,3 +15,22 @@
     </div>
   </div>
 </footer>
+
+<script>
+  // Global logout handler
+  document.addEventListener('DOMContentLoaded', function() {
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+          window.location.href = '/login';
+        } catch (error) {
+          console.error('Logout failed:', error);
+          window.location.href = '/login';
+        }
+      });
+    }
+  });
+</script>

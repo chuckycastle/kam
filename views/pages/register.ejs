@@ -1,0 +1,146 @@
+<%- include('../layouts/main', { body: `
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <h2 class="text-center mb-4">Create Account</h2>
+
+            <div id="alert-container"></div>
+
+            <form id="register-form">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="firstName" class="form-label">First Name</label>
+                  <input type="text" class="form-control" id="firstName" name="firstName" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="lastName" class="form-label">Last Name</label>
+                  <input type="text" class="form-control" id="lastName" name="lastName" required>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" required
+                       pattern="^[a-zA-Z0-9_]+$" minlength="3" maxlength="30"
+                       title="3-30 characters, letters, numbers, and underscores only">
+                <div class="form-text">3-30 characters, letters, numbers, and underscores only</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required minlength="8">
+                <div class="form-text">At least 8 characters with uppercase, lowercase, and number</div>
+              </div>
+
+              <div class="mb-4">
+                <label for="confirmPassword" class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100" id="submit-btn">
+                <span id="btn-text">Create Account</span>
+                <span id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+              </button>
+            </form>
+
+            <hr class="my-4">
+
+            <div class="text-center">
+              <span class="text-muted">Already have an account?</span>
+              <a href="/login">Login</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+`, scripts: `
+  <script>
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const form = e.target;
+      const alertContainer = document.getElementById('alert-container');
+      const submitBtn = document.getElementById('submit-btn');
+      const btnText = document.getElementById('btn-text');
+      const btnSpinner = document.getElementById('btn-spinner');
+
+      // Get form values
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      // Client-side validation
+      if (password !== confirmPassword) {
+        alertContainer.innerHTML = '<div class="alert alert-danger">Passwords do not match</div>';
+        return;
+      }
+
+      // Password strength check
+      const hasUppercase = /[A-Z]/.test(password);
+      const hasLowercase = /[a-z]/.test(password);
+      const hasNumber = /[0-9]/.test(password);
+
+      if (!hasUppercase || !hasLowercase || !hasNumber) {
+        alertContainer.innerHTML = '<div class="alert alert-danger">Password must contain at least one uppercase letter, one lowercase letter, and one number</div>';
+        return;
+      }
+
+      // Show loading state
+      submitBtn.disabled = true;
+      btnText.textContent = 'Creating Account...';
+      btnSpinner.classList.remove('d-none');
+      alertContainer.innerHTML = '';
+
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            username,
+            email,
+            password,
+            confirmPassword,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alertContainer.innerHTML = '<div class="alert alert-success">' +
+            (data.data?.message || 'Registration successful! Please check your email to verify your account.') +
+            '</div>';
+          form.reset();
+
+          // Redirect to login after 3 seconds
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 3000);
+        } else {
+          alertContainer.innerHTML = '<div class="alert alert-danger">' +
+            (data.error?.message || 'Registration failed. Please try again.') +
+            '</div>';
+        }
+      } catch (error) {
+        alertContainer.innerHTML = '<div class="alert alert-danger">An error occurred. Please try again.</div>';
+      } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        btnText.textContent = 'Create Account';
+        btnSpinner.classList.add('d-none');
+      }
+    });
+  </script>
+` }) %>

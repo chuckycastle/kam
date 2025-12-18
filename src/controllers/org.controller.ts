@@ -11,11 +11,19 @@ export async function listOrganizations(
 ): Promise<void> {
   try {
     const page = Number(req.query.page) || PAGINATION.DEFAULT_PAGE;
-    const limit = Math.min(Number(req.query.limit) || PAGINATION.DEFAULT_LIMIT, PAGINATION.MAX_LIMIT);
+    const limit = Math.min(
+      Number(req.query.limit) || PAGINATION.DEFAULT_LIMIT,
+      PAGINATION.MAX_LIMIT
+    );
     const search = req.query.search as string | undefined;
     const categoryId = req.query.categoryId as string | undefined;
     const assignedToId = req.query.assignedToId as string | undefined;
-    const isAvailable = req.query.isAvailable === 'true' ? true : req.query.isAvailable === 'false' ? false : undefined;
+    const isAvailable =
+      req.query.isAvailable === 'true'
+        ? true
+        : req.query.isAvailable === 'false'
+          ? false
+          : undefined;
     const sortBy = (req.query.sortBy as string) || 'name';
     const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'asc';
 
@@ -42,7 +50,12 @@ export async function listOrganizations(
         include: {
           category: true,
           assignedTo: {
-            select: { id: true, username: true, firstName: true, lastName: true },
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+            },
           },
           _count: { select: { items: true, notes: true } },
         },
@@ -74,7 +87,13 @@ export async function getOrganization(
       include: {
         category: true,
         assignedTo: {
-          select: { id: true, username: true, firstName: true, lastName: true, email: true },
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
         },
         items: {
           orderBy: { createdAt: 'desc' },
@@ -84,7 +103,14 @@ export async function getOrganization(
           orderBy: { createdAt: 'desc' },
           take: 5,
           include: {
-            author: { select: { id: true, username: true, firstName: true, lastName: true } },
+            author: {
+              select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
           },
         },
       },
@@ -212,7 +238,13 @@ export async function assignOrganization(
       },
       include: {
         assignedTo: {
-          select: { id: true, username: true, firstName: true, lastName: true, email: true },
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
         },
       },
     });

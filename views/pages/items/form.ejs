@@ -1,0 +1,166 @@
+<%- include('../../layouts/main', { body: `
+  <div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/items">Items</a></li>
+        <li class="breadcrumb-item active" id="breadcrumb-title">New Item</li>
+      </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white">
+            <h4 class="mb-0" id="form-title">New Item</h4>
+          </div>
+          <div class="card-body">
+            <div id="alert-container"></div>
+
+            <form id="item-form">
+              <div class="mb-3">
+                <label for="name" class="form-label">Item Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+
+              <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3" placeholder="Describe the item..."></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label for="organizationId" class="form-label">Organization <span class="text-danger">*</span></label>
+                <select class="form-select" id="organizationId" name="organizationId" required>
+                  <option value="">Select an organization...</option>
+                </select>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="value" class="form-label">Estimated Value ($)</label>
+                  <input type="number" class="form-control" id="value" name="value" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="quantity" class="form-label">Quantity</label>
+                  <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1">
+                </div>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" id="submit-btn">
+                  <span id="btn-text">Add Item</span>
+                  <span id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                </button>
+                <a href="/items" class="btn btn-outline-secondary">Cancel</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+`, scripts: `
+  <script>
+    const pathParts = window.location.pathname.split('/');
+    const isEdit = pathParts[3] === 'edit';
+    const itemId = isEdit ? pathParts[2] : null;
+
+    async function loadFormData() {
+      // Load organizations
+      try {
+        const orgResponse = await fetch('/api/orgs?limit=100');
+        const orgData = await orgResponse.json();
+        if (orgData.success && orgData.data) {
+          const select = document.getElementById('organizationId');
+          orgData.data.forEach(org => {
+            const option = document.createElement('option');
+            option.value = org.id;
+            option.textContent = org.name;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load organizations:', error);
+      }
+
+      // Check for orgId in URL params (for pre-selecting org)
+      const urlParams = new URLSearchParams(window.location.search);
+      const preselectedOrgId = urlParams.get('orgId');
+      if (preselectedOrgId) {
+        document.getElementById('organizationId').value = preselectedOrgId;
+      }
+
+      // Load existing item data if editing
+      if (isEdit && itemId) {
+        document.getElementById('form-title').textContent = 'Edit Item';
+        document.getElementById('breadcrumb-title').textContent = 'Edit';
+        document.getElementById('btn-text').textContent = 'Save Changes';
+
+        try {
+          const response = await fetch('/api/items/' + itemId);
+          const data = await response.json();
+
+          if (data.success && data.data) {
+            const item = data.data;
+            document.getElementById('name').value = item.name || '';
+            document.getElementById('description').value = item.description || '';
+            document.getElementById('organizationId').value = item.organizationId || '';
+            document.getElementById('value').value = item.value || '';
+            document.getElementById('quantity').value = item.quantity || 1;
+          }
+        } catch (error) {
+          console.error('Failed to load item:', error);
+        }
+      }
+    }
+
+    document.getElementById('item-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const alertContainer = document.getElementById('alert-container');
+      const submitBtn = document.getElementById('submit-btn');
+      const btnText = document.getElementById('btn-text');
+      const btnSpinner = document.getElementById('btn-spinner');
+
+      const formData = {
+        name: document.getElementById('name').value.trim(),
+        description: document.getElementById('description').value.trim() || null,
+        organizationId: document.getElementById('organizationId').value,
+        value: document.getElementById('value').value ? parseFloat(document.getElementById('value').value) : null,
+        quantity: parseInt(document.getElementById('quantity').value) || 1,
+      };
+
+      submitBtn.disabled = true;
+      btnText.textContent = isEdit ? 'Saving...' : 'Adding...';
+      btnSpinner.classList.remove('d-none');
+      alertContainer.innerHTML = '';
+
+      try {
+        const url = isEdit ? '/api/items/' + itemId : '/api/items';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          window.location.href = '/items/' + (data.data?.id || itemId);
+        } else {
+          alertContainer.innerHTML = '<div class="alert alert-danger">' +
+            (data.error?.message || 'Failed to save item') + '</div>';
+        }
+      } catch (error) {
+        alertContainer.innerHTML = '<div class="alert alert-danger">An error occurred. Please try again.</div>';
+      } finally {
+        submitBtn.disabled = false;
+        btnText.textContent = isEdit ? 'Save Changes' : 'Add Item';
+        btnSpinner.classList.add('d-none');
+      }
+    });
+
+    loadFormData();
+  </script>
+` }) %>

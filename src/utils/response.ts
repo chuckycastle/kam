@@ -55,7 +55,10 @@ export function sendNotFound(res: Response, resource = 'Resource'): Response {
   return sendError(res, 'NOT_FOUND', `${resource} not found`, 404);
 }
 
-export function sendUnauthorized(res: Response, message = 'Unauthorized'): Response {
+export function sendUnauthorized(
+  res: Response,
+  message = 'Unauthorized'
+): Response {
   return sendError(res, 'UNAUTHORIZED', message, 401);
 }
 
@@ -63,10 +66,7 @@ export function sendForbidden(res: Response, message = 'Forbidden'): Response {
   return sendError(res, 'FORBIDDEN', message, 403);
 }
 
-export function sendValidationError(
-  res: Response,
-  details: unknown
-): Response {
+export function sendValidationError(res: Response, details: unknown): Response {
   return sendError(res, 'VALIDATION_ERROR', 'Validation failed', 400, details);
 }
 

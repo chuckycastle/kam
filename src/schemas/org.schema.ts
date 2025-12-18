@@ -24,7 +24,12 @@ export const updateOrgSchema = z.object({
   contactName: z.string().max(100).optional().nullable(),
   contactTitle: z.string().max(100).optional().nullable(),
   contactPhone: z.string().max(20).optional().nullable(),
-  contactEmail: z.string().email('Invalid email').optional().nullable().or(z.literal('')),
+  contactEmail: z
+    .string()
+    .email('Invalid email')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
   isAvailable: z.boolean().optional(),
   categoryId: z.string().uuid('Invalid category ID').optional().nullable(),
   assignedToId: z.string().uuid('Invalid user ID').optional().nullable(),

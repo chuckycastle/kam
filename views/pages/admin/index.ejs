@@ -1,0 +1,474 @@
+<%- include('../../layouts/main', { body: `
+  <div class="container py-4">
+    <h1 class="h2 mb-4">Admin Panel</h1>
+
+    <ul class="nav nav-tabs mb-4" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#users-tab" type="button">
+          <i class="bi bi-people me-1"></i> Users
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#categories-tab" type="button">
+          <i class="bi bi-tags me-1"></i> Categories
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#reports-tab" type="button">
+          <i class="bi bi-bar-chart me-1"></i> Reports
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- Users Tab -->
+      <div class="tab-pane fade show active" id="users-tab">
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-body">
+            <form id="user-filter-form" class="row g-3">
+              <div class="col-md-4">
+                <input type="text" class="form-control" id="user-search" placeholder="Search users...">
+              </div>
+              <div class="col-md-3">
+                <select class="form-select" id="user-role">
+                  <option value="">All Roles</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="COORDINATOR">Coordinator</option>
+                  <option value="VOLUNTEER">Volunteer</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select class="form-select" id="user-status">
+                  <option value="">All Status</option>
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">Filter</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Orgs</th>
+                  <th>Items</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table">
+                <tr>
+                  <td colspan="7" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories Tab -->
+      <div class="tab-pane fade" id="categories-tab">
+        <div class="d-flex justify-content-end mb-3">
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="openCategoryModal()">
+            <i class="bi bi-plus-lg me-1"></i> Add Category
+          </button>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Category Name</th>
+                  <th>Description</th>
+                  <th>Organizations</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="categories-table">
+                <tr>
+                  <td colspan="4" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports Tab -->
+      <div class="tab-pane fade" id="reports-tab">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white">
+                <h5 class="mb-0">User Activity</h5>
+              </div>
+              <div class="card-body" id="user-activity-content">
+                <p class="text-muted">Loading...</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white">
+                <h5 class="mb-0">Category Breakdown</h5>
+              </div>
+              <div class="card-body" id="category-breakdown-content">
+                <p class="text-muted">Loading...</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white">
+                <h5 class="mb-0">Leaderboard</h5>
+              </div>
+              <div class="card-body" id="leaderboard-content">
+                <p class="text-muted">Loading...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Edit Modal -->
+  <div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="user-form">
+            <input type="hidden" id="edit-user-id">
+            <div class="mb-3">
+              <label class="form-label">Role</label>
+              <select class="form-select" id="edit-user-role">
+                <option value="VOLUNTEER">Volunteer</option>
+                <option value="COORDINATOR">Coordinator</option>
+                <option value="ADMIN">Admin</option>
+                <option value="SUPER_ADMIN">Super Admin</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="edit-user-active">
+                <label class="form-check-label" for="edit-user-active">Active</label>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveUser()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Modal -->
+  <div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="category-modal-title">Add Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="category-form">
+            <input type="hidden" id="edit-category-id">
+            <div class="mb-3">
+              <label class="form-label">Category Name</label>
+              <input type="text" class="form-control" id="edit-category-title" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" id="edit-category-description" rows="2"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveCategory()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+`, scripts: `
+  <script>
+    // Users Tab
+    async function loadUsers() {
+      const search = document.getElementById('user-search').value;
+      const role = document.getElementById('user-role').value;
+      const isActive = document.getElementById('user-status').value;
+
+      const params = new URLSearchParams({
+        limit: '50',
+        ...(search && { search }),
+        ...(role && { role }),
+        ...(isActive && { isActive }),
+      });
+
+      try {
+        const response = await fetch('/api/users?' + params);
+        const data = await response.json();
+
+        const tbody = document.getElementById('users-table');
+
+        if (!data.success || !data.data?.length) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No users found</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.data.map(user => {
+          const statusBadge = user.isActive
+            ? '<span class="badge bg-success">Active</span>'
+            : '<span class="badge bg-secondary">Inactive</span>';
+
+          const roleBadge = getRoleBadge(user.role);
+
+          return '<tr>' +
+            '<td>' +
+              '<div class="fw-medium">' + escapeHtml(user.firstName + ' ' + user.lastName) + '</div>' +
+              '<small class="text-muted">@' + escapeHtml(user.username) + '</small>' +
+            '</td>' +
+            '<td>' + escapeHtml(user.email) + '</td>' +
+            '<td>' + roleBadge + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td>' + (user._count?.organizations || 0) + '</td>' +
+            '<td>' + (user._count?.items || 0) + '</td>' +
+            '<td class="text-end">' +
+              '<button class="btn btn-sm btn-outline-primary" onclick="editUser(\\'' + user.id + '\\', \\'' + user.role + '\\', ' + user.isActive + ')">' +
+                '<i class="bi bi-pencil"></i>' +
+              '</button>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+      } catch (error) {
+        console.error('Failed to load users:', error);
+      }
+    }
+
+    function getRoleBadge(role) {
+      const badges = {
+        'SUPER_ADMIN': '<span class="badge bg-danger">Super Admin</span>',
+        'ADMIN': '<span class="badge bg-warning text-dark">Admin</span>',
+        'COORDINATOR': '<span class="badge bg-info">Coordinator</span>',
+        'VOLUNTEER': '<span class="badge bg-primary">Volunteer</span>',
+      };
+      return badges[role] || '<span class="badge bg-secondary">' + role + '</span>';
+    }
+
+    function editUser(id, role, isActive) {
+      document.getElementById('edit-user-id').value = id;
+      document.getElementById('edit-user-role').value = role;
+      document.getElementById('edit-user-active').checked = isActive;
+      new bootstrap.Modal(document.getElementById('userModal')).show();
+    }
+
+    async function saveUser() {
+      const id = document.getElementById('edit-user-id').value;
+      const role = document.getElementById('edit-user-role').value;
+      const isActive = document.getElementById('edit-user-active').checked;
+
+      try {
+        const response = await fetch('/api/users/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role, isActive }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+          loadUsers();
+        } else {
+          alert(data.error?.message || 'Failed to update user');
+        }
+      } catch (error) {
+        alert('Failed to update user');
+      }
+    }
+
+    // Categories Tab
+    async function loadCategories() {
+      try {
+        const response = await fetch('/api/reports/categories');
+        const data = await response.json();
+
+        const tbody = document.getElementById('categories-table');
+
+        if (!data.success || !data.data?.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No categories found</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.data.map(cat =>
+          '<tr>' +
+            '<td class="fw-medium">' + escapeHtml(cat.name) + '</td>' +
+            '<td>' + escapeHtml(cat.description || '-') + '</td>' +
+            '<td><span class="badge bg-light text-dark">' + cat.organizationCount + '</span></td>' +
+            '<td class="text-end">' +
+              '<button class="btn btn-sm btn-outline-primary" onclick="editCategory(\\'' + cat.id + '\\', \\'' + escapeHtml(cat.name) + '\\', \\'' + escapeHtml(cat.description || '') + '\\')">' +
+                '<i class="bi bi-pencil"></i>' +
+              '</button>' +
+            '</td>' +
+          '</tr>'
+        ).join('');
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      }
+    }
+
+    function openCategoryModal() {
+      document.getElementById('category-modal-title').textContent = 'Add Category';
+      document.getElementById('edit-category-id').value = '';
+      document.getElementById('edit-category-title').value = '';
+      document.getElementById('edit-category-description').value = '';
+    }
+
+    function editCategory(id, name, description) {
+      document.getElementById('category-modal-title').textContent = 'Edit Category';
+      document.getElementById('edit-category-id').value = id;
+      document.getElementById('edit-category-title').value = name;
+      document.getElementById('edit-category-description').value = description;
+      new bootstrap.Modal(document.getElementById('categoryModal')).show();
+    }
+
+    async function saveCategory() {
+      const id = document.getElementById('edit-category-id').value;
+      const title = document.getElementById('edit-category-title').value.trim();
+      const description = document.getElementById('edit-category-description').value.trim() || null;
+
+      if (!title) {
+        alert('Category name is required');
+        return;
+      }
+
+      // Note: Category create/update API would need to be added
+      // For now, just show a message
+      alert('Category management API not yet implemented');
+      bootstrap.Modal.getInstance(document.getElementById('categoryModal')).hide();
+    }
+
+    // Reports Tab
+    async function loadReports() {
+      // Load user activity
+      try {
+        const activityResponse = await fetch('/api/reports/user-activity');
+        const activityData = await activityResponse.json();
+
+        if (activityData.success && activityData.data) {
+          const content = document.getElementById('user-activity-content');
+          content.innerHTML = '<div class="table-responsive"><table class="table table-sm">' +
+            '<thead><tr><th>User</th><th>Orgs</th><th>Items</th><th>Notes</th></tr></thead>' +
+            '<tbody>' +
+            activityData.data.slice(0, 10).map(user =>
+              '<tr>' +
+                '<td>' + escapeHtml(user.name) + '</td>' +
+                '<td>' + user.stats.organizations + '</td>' +
+                '<td>' + user.stats.items + '</td>' +
+                '<td>' + user.stats.notes + '</td>' +
+              '</tr>'
+            ).join('') +
+            '</tbody></table></div>';
+        }
+      } catch (error) {
+        console.error('Failed to load user activity:', error);
+      }
+
+      // Load category breakdown
+      try {
+        const breakdownResponse = await fetch('/api/reports/category-breakdown');
+        const breakdownData = await breakdownResponse.json();
+
+        if (breakdownData.success && breakdownData.data) {
+          const content = document.getElementById('category-breakdown-content');
+          content.innerHTML = '<div class="table-responsive"><table class="table table-sm">' +
+            '<thead><tr><th>Category</th><th>Orgs</th><th>Items</th></tr></thead>' +
+            '<tbody>' +
+            breakdownData.data.map(cat =>
+              '<tr>' +
+                '<td>' + escapeHtml(cat.title) + '</td>' +
+                '<td>' + cat.organizationCount + '</td>' +
+                '<td>' + cat.itemCount + '</td>' +
+              '</tr>'
+            ).join('') +
+            '</tbody></table></div>';
+        }
+      } catch (error) {
+        console.error('Failed to load category breakdown:', error);
+      }
+
+      // Load leaderboard
+      try {
+        const leaderboardResponse = await fetch('/api/reports/leaderboard');
+        const leaderboardData = await leaderboardResponse.json();
+
+        if (leaderboardData.success && leaderboardData.data) {
+          const content = document.getElementById('leaderboard-content');
+          content.innerHTML = '<div class="table-responsive"><table class="table">' +
+            '<thead><tr><th>#</th><th>User</th><th>Items</th><th>Orgs</th><th>Points</th></tr></thead>' +
+            '<tbody>' +
+            leaderboardData.data.map(user =>
+              '<tr>' +
+                '<td><span class="badge bg-' + (user.rank <= 3 ? 'warning' : 'secondary') + '">' + user.rank + '</span></td>' +
+                '<td>' + escapeHtml(user.name) + '</td>' +
+                '<td>' + user.itemsCount + '</td>' +
+                '<td>' + user.organizationsCount + '</td>' +
+                '<td><strong>' + user.points + '</strong></td>' +
+              '</tr>'
+            ).join('') +
+            '</tbody></table></div>';
+        }
+      } catch (error) {
+        console.error('Failed to load leaderboard:', error);
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Event listeners
+    document.getElementById('user-filter-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      loadUsers();
+    });
+
+    // Tab change handlers
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+      tab.addEventListener('shown.bs.tab', (e) => {
+        if (e.target.dataset.bsTarget === '#categories-tab') {
+          loadCategories();
+        } else if (e.target.dataset.bsTarget === '#reports-tab') {
+          loadReports();
+        }
+      });
+    });
+
+    // Initial load
+    loadUsers();
+  </script>
+` }) %>

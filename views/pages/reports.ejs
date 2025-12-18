@@ -1,0 +1,208 @@
+<%- include('../layouts/main', { body: `
+  <div class="container py-4">
+    <h1 class="h2 mb-4">Reports</h1>
+
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0">
+                <div class="bg-primary bg-opacity-10 rounded p-3">
+                  <i class="bi bi-building text-primary fs-4"></i>
+                </div>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h6 class="text-muted mb-1">Total Organizations</h6>
+                <h3 class="mb-0" id="total-orgs">-</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0">
+                <div class="bg-success bg-opacity-10 rounded p-3">
+                  <i class="bi bi-gift text-success fs-4"></i>
+                </div>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h6 class="text-muted mb-1">Items Received</h6>
+                <h3 class="mb-0" id="items-received">-</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0">
+                <div class="bg-warning bg-opacity-10 rounded p-3">
+                  <i class="bi bi-hourglass text-warning fs-4"></i>
+                </div>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h6 class="text-muted mb-1">Items Pending</h6>
+                <h3 class="mb-0" id="items-pending">-</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-shrink-0">
+                <div class="bg-info bg-opacity-10 rounded p-3">
+                  <i class="bi bi-currency-dollar text-info fs-4"></i>
+                </div>
+              </div>
+              <div class="flex-grow-1 ms-3">
+                <h6 class="text-muted mb-1">Total Value</h6>
+                <h3 class="mb-0" id="total-value">-</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Leaderboard -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-trophy me-2 text-warning"></i>Top Contributors</h5>
+          </div>
+          <div class="card-body p-0" id="leaderboard">
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary" role="status"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items Summary -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Items</h5>
+          </div>
+          <div class="card-body p-0" id="recent-items">
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary" role="status"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+`, scripts: `
+  <script>
+    async function loadDashboard() {
+      try {
+        const response = await fetch('/api/reports/dashboard');
+        const data = await response.json();
+
+        if (data.success) {
+          document.getElementById('total-orgs').textContent = data.data.organizations.total;
+          document.getElementById('items-received').textContent = data.data.items.received;
+          document.getElementById('items-pending').textContent = data.data.items.pending;
+          document.getElementById('total-value').textContent = '$' + Number(data.data.items.totalValue).toLocaleString();
+        }
+      } catch (error) {
+        console.error('Failed to load dashboard:', error);
+      }
+    }
+
+    async function loadLeaderboard() {
+      try {
+        const response = await fetch('/api/reports/leaderboard');
+        const data = await response.json();
+
+        const container = document.getElementById('leaderboard');
+
+        if (!data.success || !data.data?.length) {
+          container.innerHTML = '<p class="text-muted text-center py-4">No data available</p>';
+          return;
+        }
+
+        container.innerHTML = '<table class="table table-hover mb-0">' +
+          '<thead class="table-light"><tr><th>#</th><th>Volunteer</th><th>Items</th><th>Orgs</th><th>Points</th></tr></thead>' +
+          '<tbody>' +
+          data.data.map(user => {
+            const rankIcon = user.rank === 1 ? '<span class="text-warning">1</span>' :
+                            user.rank === 2 ? '<span class="text-secondary">2</span>' :
+                            user.rank === 3 ? '<span class="text-danger">3</span>' : user.rank;
+            return '<tr>' +
+              '<td><strong>' + rankIcon + '</strong></td>' +
+              '<td>' + escapeHtml(user.name) + '</td>' +
+              '<td>' + user.itemsCount + '</td>' +
+              '<td>' + user.organizationsCount + '</td>' +
+              '<td><strong>' + user.points + '</strong></td>' +
+            '</tr>';
+          }).join('') +
+          '</tbody></table>';
+      } catch (error) {
+        console.error('Failed to load leaderboard:', error);
+      }
+    }
+
+    async function loadRecentItems() {
+      try {
+        const response = await fetch('/api/reports/items-summary');
+        const data = await response.json();
+
+        const container = document.getElementById('recent-items');
+
+        if (!data.success || !data.data?.recentItems?.length) {
+          container.innerHTML = '<p class="text-muted text-center py-4">No recent items</p>';
+          return;
+        }
+
+        container.innerHTML = '<div class="list-group list-group-flush">' +
+          data.data.recentItems.map(item => {
+            const badge = item.isReceived
+              ? '<span class="badge bg-success">Received</span>'
+              : '<span class="badge bg-warning text-dark">Pending</span>';
+            const date = new Date(item.createdAt).toLocaleDateString();
+
+            return '<a href="/items/' + item.id + '" class="list-group-item list-group-item-action">' +
+              '<div class="d-flex justify-content-between align-items-center">' +
+                '<div>' +
+                  '<h6 class="mb-1">' + escapeHtml(item.name) + '</h6>' +
+                  '<small class="text-muted">' + escapeHtml(item.organization?.name || 'Unknown') + '</small>' +
+                '</div>' +
+                '<div class="text-end">' +
+                  badge +
+                  '<br><small class="text-muted">' + date + '</small>' +
+                '</div>' +
+              '</div>' +
+            '</a>';
+          }).join('') +
+          '</div>';
+      } catch (error) {
+        console.error('Failed to load recent items:', error);
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Load all data
+    loadDashboard();
+    loadLeaderboard();
+    loadRecentItems();
+  </script>
+` }) %>

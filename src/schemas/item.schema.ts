@@ -16,7 +16,11 @@ export const createItemSchema = z.object({
 export const updateItemSchema = z.object({
   name: z.string().min(1, 'Name is required').max(200).optional(),
   description: z.string().max(2000).optional().nullable(),
-  value: z.coerce.number().positive('Value must be positive').optional().nullable(),
+  value: z.coerce
+    .number()
+    .positive('Value must be positive')
+    .optional()
+    .nullable(),
   quantity: z.coerce.number().int().positive().optional(),
   isReceived: z.boolean().optional(),
 });
@@ -36,7 +40,9 @@ export const itemQuerySchema = z.object({
     .string()
     .transform((val) => val === 'true')
     .optional(),
-  sortBy: z.enum(['name', 'value', 'createdAt', 'updatedAt']).default('createdAt'),
+  sortBy: z
+    .enum(['name', 'value', 'createdAt', 'updatedAt'])
+    .default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 

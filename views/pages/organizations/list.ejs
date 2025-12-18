@@ -1,0 +1,207 @@
+<%- include('../../layouts/main', { body: `
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h2">Organizations</h1>
+      <div>
+        <a href="/organizations/new" class="btn btn-primary">
+          <i class="bi bi-plus-lg me-1"></i> Add Organization
+        </a>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <form id="filter-form" class="row g-3">
+          <div class="col-md-4">
+            <input type="text" class="form-control" id="search" placeholder="Search by name or contact...">
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="category">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="availability">
+              <option value="">All Status</option>
+              <option value="true">Available</option>
+              <option value="false">Assigned</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-primary w-100">
+              <i class="bi bi-search"></i> Filter
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Organizations List -->
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Contact</th>
+              <th>Status</th>
+              <th>Items</th>
+              <th>Assigned To</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="organizations-table">
+            <tr>
+              <td colspan="7" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 mb-0 text-muted">Loading organizations...</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav id="pagination" class="mt-4 d-none">
+      <ul class="pagination justify-content-center">
+      </ul>
+    </nav>
+  </div>
+`, scripts: `
+  <script>
+    let currentPage = 1;
+    const limit = 20;
+
+    async function loadCategories() {
+      try {
+        const response = await fetch('/api/reports/categories');
+        const data = await response.json();
+        if (data.success && data.data) {
+          const select = document.getElementById('category');
+          data.data.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.id;
+            option.textContent = cat.name;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      }
+    }
+
+    async function loadOrganizations(page = 1) {
+      currentPage = page;
+      const search = document.getElementById('search').value;
+      const categoryId = document.getElementById('category').value;
+      const isAvailable = document.getElementById('availability').value;
+
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(search && { search }),
+        ...(categoryId && { categoryId }),
+        ...(isAvailable && { isAvailable }),
+      });
+
+      try {
+        const response = await fetch('/api/orgs?' + params);
+        const data = await response.json();
+
+        const tbody = document.getElementById('organizations-table');
+
+        if (!data.success || !data.data?.length) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No organizations found</td></tr>';
+          document.getElementById('pagination').classList.add('d-none');
+          return;
+        }
+
+        tbody.innerHTML = data.data.map(org => {
+          const statusBadge = org.isAvailable
+            ? '<span class="badge bg-success">Available</span>'
+            : '<span class="badge bg-secondary">Assigned</span>';
+
+          const assignedTo = org.assignedTo
+            ? org.assignedTo.firstName + ' ' + org.assignedTo.lastName
+            : '-';
+
+          return '<tr>' +
+            '<td><a href="/organizations/' + org.id + '" class="text-decoration-none fw-medium">' + escapeHtml(org.name) + '</a></td>' +
+            '<td>' + (org.category?.name || '-') + '</td>' +
+            '<td>' + escapeHtml(org.contactName || '-') + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td><span class="badge bg-light text-dark">' + (org._count?.items || 0) + '</span></td>' +
+            '<td>' + escapeHtml(assignedTo) + '</td>' +
+            '<td class="text-end">' +
+              '<a href="/organizations/' + org.id + '" class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-eye"></i></a>' +
+              '<a href="/organizations/' + org.id + '/edit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+
+        // Pagination
+        if (data.meta && data.meta.totalPages > 1) {
+          renderPagination(data.meta);
+          document.getElementById('pagination').classList.remove('d-none');
+        } else {
+          document.getElementById('pagination').classList.add('d-none');
+        }
+      } catch (error) {
+        console.error('Failed to load organizations:', error);
+        document.getElementById('organizations-table').innerHTML =
+          '<tr><td colspan="7" class="text-center py-4 text-danger">Failed to load organizations</td></tr>';
+      }
+    }
+
+    function renderPagination(meta) {
+      const ul = document.querySelector('#pagination .pagination');
+      let html = '';
+
+      // Previous
+      html += '<li class="page-item ' + (meta.page <= 1 ? 'disabled' : '') + '">' +
+        '<a class="page-link" href="#" data-page="' + (meta.page - 1) + '">Previous</a></li>';
+
+      // Page numbers
+      for (let i = 1; i <= meta.totalPages; i++) {
+        if (i === 1 || i === meta.totalPages || (i >= meta.page - 2 && i <= meta.page + 2)) {
+          html += '<li class="page-item ' + (i === meta.page ? 'active' : '') + '">' +
+            '<a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+        } else if (i === meta.page - 3 || i === meta.page + 3) {
+          html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+      }
+
+      // Next
+      html += '<li class="page-item ' + (meta.page >= meta.totalPages ? 'disabled' : '') + '">' +
+        '<a class="page-link" href="#" data-page="' + (meta.page + 1) + '">Next</a></li>';
+
+      ul.innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Event listeners
+    document.getElementById('filter-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      loadOrganizations(1);
+    });
+
+    document.getElementById('pagination').addEventListener('click', (e) => {
+      e.preventDefault();
+      if (e.target.dataset.page) {
+        loadOrganizations(parseInt(e.target.dataset.page));
+      }
+    });
+
+    // Initial load
+    loadCategories();
+    loadOrganizations();
+  </script>
+` }) %>

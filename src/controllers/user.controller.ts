@@ -11,10 +11,18 @@ export async function listUsers(
 ): Promise<void> {
   try {
     const page = Number(req.query.page) || PAGINATION.DEFAULT_PAGE;
-    const limit = Math.min(Number(req.query.limit) || PAGINATION.DEFAULT_LIMIT, PAGINATION.MAX_LIMIT);
+    const limit = Math.min(
+      Number(req.query.limit) || PAGINATION.DEFAULT_LIMIT,
+      PAGINATION.MAX_LIMIT
+    );
     const search = req.query.search as string | undefined;
     const role = req.query.role as string | undefined;
-    const isActive = req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined;
+    const isActive =
+      req.query.isActive === 'true'
+        ? true
+        : req.query.isActive === 'false'
+          ? false
+          : undefined;
     const sortBy = (req.query.sortBy as string) || 'username';
     const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'asc';
 
@@ -29,7 +37,14 @@ export async function listUsers(
           { lastName: { contains: search, mode: 'insensitive' as const } },
         ],
       }),
-      ...(role && { role: role as 'SUPER_ADMIN' | 'ADMIN' | 'COORDINATOR' | 'VOLUNTEER' | 'PUBLIC' }),
+      ...(role && {
+        role: role as
+          | 'SUPER_ADMIN'
+          | 'ADMIN'
+          | 'COORDINATOR'
+          | 'VOLUNTEER'
+          | 'PUBLIC',
+      }),
       ...(isActive !== undefined && { isActive }),
     };
 

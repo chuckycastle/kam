@@ -9,7 +9,12 @@ export const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req, res) => {
-    sendError(res, 'RATE_LIMITED', 'Too many requests, please try again later', 429);
+    sendError(
+      res,
+      'RATE_LIMITED',
+      'Too many requests, please try again later',
+      429
+    );
   },
 });
 
@@ -37,7 +42,12 @@ export function createRateLimiter(windowMs: number, max: number) {
     standardHeaders: true,
     legacyHeaders: false,
     handler: (_req, res) => {
-      sendError(res, 'RATE_LIMITED', 'Too many requests, please try again later', 429);
+      sendError(
+        res,
+        'RATE_LIMITED',
+        'Too many requests, please try again later',
+        429
+      );
     },
   });
 }

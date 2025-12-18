@@ -1,21 +1,13 @@
 import { Router } from 'express';
 import { requireAuth, requireMinRole } from '../middleware/auth.js';
 import { validateBody, validateParams } from '../middleware/validation.js';
-import {
-  updateUserSchema,
-  userIdSchema,
-} from '../schemas/user.schema.js';
+import { updateUserSchema, userIdSchema } from '../schemas/user.schema.js';
 import * as userController from '../controllers/user.controller.js';
 
 const router = Router();
 
 // GET /api/users - List users (requires ADMIN+)
-router.get(
-  '/',
-  requireAuth,
-  requireMinRole('ADMIN'),
-  userController.listUsers
-);
+router.get('/', requireAuth, requireMinRole('ADMIN'), userController.listUsers);
 
 // GET /api/users/:id - Get single user
 router.get(

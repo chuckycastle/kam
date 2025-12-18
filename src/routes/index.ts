@@ -4,6 +4,7 @@ import orgRoutes from './org.routes.js';
 import itemRoutes from './item.routes.js';
 import userRoutes from './user.routes.js';
 import reportRoutes from './report.routes.js';
+import noteRoutes from './note.routes.js';
 import { apiLimiter } from '../middleware/rate-limiter.js';
 
 const router = Router();
@@ -22,5 +23,6 @@ router.use('/orgs', orgRoutes);
 router.use('/items', itemRoutes);
 router.use('/users', userRoutes);
 router.use('/reports', reportRoutes);
+router.use('/notes', noteRoutes);
 
 export default router;

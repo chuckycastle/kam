@@ -11,11 +11,19 @@ export async function listItems(
 ): Promise<void> {
   try {
     const page = Number(req.query.page) || PAGINATION.DEFAULT_PAGE;
-    const limit = Math.min(Number(req.query.limit) || PAGINATION.DEFAULT_LIMIT, PAGINATION.MAX_LIMIT);
+    const limit = Math.min(
+      Number(req.query.limit) || PAGINATION.DEFAULT_LIMIT,
+      PAGINATION.MAX_LIMIT
+    );
     const search = req.query.search as string | undefined;
     const organizationId = req.query.organizationId as string | undefined;
     const createdById = req.query.createdById as string | undefined;
-    const isReceived = req.query.isReceived === 'true' ? true : req.query.isReceived === 'false' ? false : undefined;
+    const isReceived =
+      req.query.isReceived === 'true'
+        ? true
+        : req.query.isReceived === 'false'
+          ? false
+          : undefined;
     const sortBy = (req.query.sortBy as string) || 'createdAt';
     const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'desc';
 
@@ -41,7 +49,14 @@ export async function listItems(
         orderBy: { [sortBy]: sortOrder },
         include: {
           organization: { select: { id: true, name: true } },
-          createdBy: { select: { id: true, username: true, firstName: true, lastName: true } },
+          createdBy: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
         },
       }),
       prisma.item.count({ where }),
@@ -70,7 +85,12 @@ export async function getItem(
       where: { id },
       include: {
         organization: {
-          select: { id: true, name: true, contactName: true, contactEmail: true },
+          select: {
+            id: true,
+            name: true,
+            contactName: true,
+            contactEmail: true,
+          },
         },
         createdBy: {
           select: { id: true, username: true, firstName: true, lastName: true },
@@ -119,11 +139,16 @@ export async function createItem(
       },
       include: {
         organization: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, username: true, firstName: true, lastName: true } },
+        createdBy: {
+          select: { id: true, username: true, firstName: true, lastName: true },
+        },
       },
     });
 
-    logger.info({ itemId: item.id, orgId: data.organizationId }, 'Item created');
+    logger.info(
+      { itemId: item.id, orgId: data.organizationId },
+      'Item created'
+    );
 
     sendSuccess(res, item, 201);
   } catch (error) {
@@ -149,7 +174,11 @@ export async function updateItem(
     }
 
     // Only creator or admin can update
-    if (existing.createdById !== userId && userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+    if (
+      existing.createdById !== userId &&
+      userRole !== 'ADMIN' &&
+      userRole !== 'SUPER_ADMIN'
+    ) {
       sendForbidden(res, 'You can only update items you created');
       return;
     }
@@ -159,7 +188,9 @@ export async function updateItem(
       data,
       include: {
         organization: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, username: true, firstName: true, lastName: true } },
+        createdBy: {
+          select: { id: true, username: true, firstName: true, lastName: true },
+        },
       },
     });
 
@@ -217,7 +248,9 @@ export async function markReceived(
       },
       include: {
         organization: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, username: true, firstName: true, lastName: true } },
+        createdBy: {
+          select: { id: true, username: true, firstName: true, lastName: true },
+        },
       },
     });
 

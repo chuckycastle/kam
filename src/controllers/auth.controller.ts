@@ -3,7 +3,13 @@ import { supabase } from '../config/database.js';
 import { prisma } from '../config/database.js';
 import { sendSuccess, sendError, sendUnauthorized } from '../utils/response.js';
 import { logger } from '../utils/logger.js';
-import type { LoginInput, RegisterInput, ForgotPasswordInput } from '../schemas/auth.schema.js';
+import type {
+  LoginInput,
+  RegisterInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+  ChangePasswordInput,
+} from '../schemas/auth.schema.js';
 
 export async function register(
   req: Request<unknown, unknown, RegisterInput>,
@@ -63,14 +69,19 @@ export async function register(
 
     logger.info({ userId: user.id }, 'User registered');
 
-    sendSuccess(res, {
-      message: 'Registration successful. Please check your email to verify your account.',
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
+    sendSuccess(
+      res,
+      {
+        message:
+          'Registration successful. Please check your email to verify your account.',
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+        },
       },
-    }, 201);
+      201
+    );
   } catch (error) {
     next(error);
   }
@@ -172,7 +183,8 @@ export async function forgotPassword(
 
     // Always return success to prevent email enumeration
     sendSuccess(res, {
-      message: 'If an account with that email exists, a password reset link has been sent.',
+      message:
+        'If an account with that email exists, a password reset link has been sent.',
     });
   } catch (error) {
     next(error);
@@ -185,14 +197,17 @@ export async function getCurrentUser(
   next: NextFunction
 ): Promise<void> {
   try {
-    const token = req.headers.authorization?.substring(7) || req.cookies?.['kam.token'];
+    const token =
+      req.headers.authorization?.substring(7) || req.cookies?.['kam.token'];
 
     if (!token) {
       sendSuccess(res, { user: null });
       return;
     }
 
-    const { data: { user: authUser } } = await supabase.auth.getUser(token);
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser(token);
 
     if (!authUser) {
       sendSuccess(res, { user: null });
@@ -213,6 +228,100 @@ export async function getCurrentUser(
     });
 
     sendSuccess(res, { user });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resetPassword(
+  req: Request<unknown, unknown, ResetPasswordInput>,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { token, password } = req.body;
+
+    // Use the token to update user's password via Supabase
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: token,
+      type: 'recovery',
+    });
+
+    if (error) {
+      logger.error({ error }, 'Password reset verification failed');
+      sendError(res, 'RESET_FAILED', 'Invalid or expired reset token', 400);
+      return;
+    }
+
+    // Update the password
+    const { error: updateError } = await supabase.auth.updateUser({
+      password,
+    });
+
+    if (updateError) {
+      logger.error({ error: updateError }, 'Password update failed');
+      sendError(res, 'RESET_FAILED', 'Failed to update password', 400);
+      return;
+    }
+
+    logger.info('Password reset successful');
+
+    sendSuccess(res, {
+      message:
+        'Password has been reset successfully. You can now log in with your new password.',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function changePassword(
+  req: Request<unknown, unknown, ChangePasswordInput>,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user!.id;
+
+    // Get user's email for re-authentication
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+
+    if (!user) {
+      sendError(res, 'USER_NOT_FOUND', 'User not found', 404);
+      return;
+    }
+
+    // Verify current password by attempting to sign in
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+
+    if (authError) {
+      sendError(res, 'INVALID_PASSWORD', 'Current password is incorrect', 400);
+      return;
+    }
+
+    // Update to new password
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (updateError) {
+      logger.error({ error: updateError }, 'Password change failed');
+      sendError(res, 'UPDATE_FAILED', 'Failed to update password', 400);
+      return;
+    }
+
+    logger.info({ userId }, 'Password changed successfully');
+
+    sendSuccess(res, {
+      message: 'Password has been changed successfully.',
+    });
   } catch (error) {
     next(error);
   }
