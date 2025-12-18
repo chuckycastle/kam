@@ -102,6 +102,21 @@ export function createApp(): Express {
     });
   });
 
+  app.get('/forgot-password', (_req, res) => {
+    res.render('pages/forgot-password', {
+      title: 'Forgot Password - KAM',
+      user: null,
+    });
+  });
+
+  // Reset password page (also handle /auth/reset-password for Supabase redirect)
+  app.get(['/reset-password', '/auth/reset-password'], (_req, res) => {
+    res.render('pages/reset-password', {
+      title: 'Reset Password - KAM',
+      user: null,
+    });
+  });
+
   app.get('/dashboard', (req, res) => {
     if (!req.user) {
       res.redirect('/login');
