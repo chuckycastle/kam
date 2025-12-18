@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../config/database.js';
 import { sendSuccess, sendNotFound, sendForbidden } from '../utils/response.js';
-import { logger } from '../utils/logger.js';
-import { Role } from '@prisma/client';
+import { noteService, organizationService } from '../services/index.js';
 
 export async function createNote(
   req: Request,
@@ -14,32 +12,18 @@ export async function createNote(
     const authorId = req.user!.id;
 
     // Verify organization exists
-    const organization = await prisma.organization.findUnique({
-      where: { id: organizationId },
-    });
-
-    if (!organization) {
+    const orgExists =
+      await organizationService.organizationExists(organizationId);
+    if (!orgExists) {
       sendNotFound(res, 'Organization');
       return;
     }
 
-    const note = await prisma.note.create({
-      data: {
-        content,
-        organizationId,
-        authorId,
-      },
-      include: {
-        author: {
-          select: { id: true, username: true, firstName: true, lastName: true },
-        },
-        organization: {
-          select: { id: true, name: true },
-        },
-      },
+    const note = await noteService.createNote({
+      content,
+      organizationId,
+      authorId,
     });
-
-    logger.info({ noteId: note.id, orgId: organizationId }, 'Note created');
 
     sendSuccess(res, note, 201);
   } catch (error) {
@@ -55,17 +39,7 @@ export async function getNote(
   try {
     const { id } = req.params;
 
-    const note = await prisma.note.findUnique({
-      where: { id },
-      include: {
-        author: {
-          select: { id: true, username: true, firstName: true, lastName: true },
-        },
-        organization: {
-          select: { id: true, name: true },
-        },
-      },
-    });
+    const note = await noteService.getNoteById(id);
 
     if (!note) {
       sendNotFound(res, 'Note');
@@ -88,35 +62,19 @@ export async function updateNote(
     const { content } = req.body;
     const userId = req.user!.id;
 
-    const existing = await prisma.note.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
+    const ownership = await noteService.getNoteOwnership(id);
+    if (!ownership.exists) {
       sendNotFound(res, 'Note');
       return;
     }
 
     // Only author can update their note
-    if (existing.authorId !== userId) {
+    if (!noteService.canEditNote(userId, ownership.authorId!)) {
       sendForbidden(res, 'You can only edit your own notes');
       return;
     }
 
-    const note = await prisma.note.update({
-      where: { id },
-      data: { content },
-      include: {
-        author: {
-          select: { id: true, username: true, firstName: true, lastName: true },
-        },
-        organization: {
-          select: { id: true, name: true },
-        },
-      },
-    });
-
-    logger.info({ noteId: id }, 'Note updated');
+    const note = await noteService.updateNote(id, content);
 
     sendSuccess(res, note);
   } catch (error) {
@@ -134,25 +92,19 @@ export async function deleteNote(
     const userId = req.user!.id;
     const userRole = req.user!.role;
 
-    const existing = await prisma.note.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
+    const ownership = await noteService.getNoteOwnership(id);
+    if (!ownership.exists) {
       sendNotFound(res, 'Note');
       return;
     }
 
     // Author or admin can delete
-    const isAdmin = userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN;
-    if (existing.authorId !== userId && !isAdmin) {
+    if (!noteService.canDeleteNote(userId, ownership.authorId!, userRole)) {
       sendForbidden(res, 'You can only delete your own notes');
       return;
     }
 
-    await prisma.note.delete({ where: { id } });
-
-    logger.info({ noteId: id }, 'Note deleted');
+    await noteService.deleteNote(id);
 
     sendSuccess(res, { message: 'Note deleted' });
   } catch (error) {

@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '../config/database.js';
 import { sendSuccess, sendNotFound, sendError } from '../utils/response.js';
-import { logger } from '../utils/logger.js';
+import { categoryService } from '../services/index.js';
 import type {
   CreateCategoryInput,
   UpdateCategoryInput,
@@ -13,26 +12,9 @@ export async function listCategories(
   next: NextFunction
 ): Promise<void> {
   try {
-    const categories = await prisma.category.findMany({
-      orderBy: { title: 'asc' },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        _count: { select: { organizations: true } },
-      },
-    });
+    const categories = await categoryService.listCategories();
 
-    // Map for frontend consistency
-    const mappedCategories = categories.map((cat) => ({
-      id: cat.id,
-      name: cat.title,
-      title: cat.title,
-      description: cat.description,
-      organizationCount: cat._count.organizations,
-    }));
-
-    sendSuccess(res, mappedCategories);
+    sendSuccess(res, categories);
   } catch (error) {
     next(error);
   }
@@ -46,28 +28,14 @@ export async function getCategory(
   try {
     const { id } = req.params;
 
-    const category = await prisma.category.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        _count: { select: { organizations: true } },
-      },
-    });
+    const category = await categoryService.getCategoryById(id);
 
     if (!category) {
       sendNotFound(res, 'Category');
       return;
     }
 
-    sendSuccess(res, {
-      id: category.id,
-      name: category.title,
-      title: category.title,
-      description: category.description,
-      organizationCount: category._count.organizations,
-    });
+    sendSuccess(res, category);
   } catch (error) {
     next(error);
   }
@@ -82,11 +50,8 @@ export async function createCategory(
     const { title, description } = req.body;
 
     // Check for duplicate title
-    const existing = await prisma.category.findFirst({
-      where: { title: { equals: title, mode: 'insensitive' } },
-    });
-
-    if (existing) {
+    const exists = await categoryService.categoryTitleExists(title);
+    if (exists) {
       sendError(
         res,
         'DUPLICATE_CATEGORY',
@@ -96,30 +61,12 @@ export async function createCategory(
       return;
     }
 
-    const category = await prisma.category.create({
-      data: {
-        title,
-        description: description || null,
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-      },
+    const category = await categoryService.createCategory({
+      title,
+      description,
     });
 
-    logger.info({ categoryId: category.id }, 'Category created');
-
-    sendSuccess(
-      res,
-      {
-        id: category.id,
-        name: category.title,
-        title: category.title,
-        description: category.description,
-      },
-      201
-    );
+    sendSuccess(res, category, 201);
   } catch (error) {
     next(error);
   }
@@ -134,7 +81,7 @@ export async function updateCategory(
     const { id } = req.params;
     const { title, description } = req.body;
 
-    const existing = await prisma.category.findUnique({ where: { id } });
+    const existing = await categoryService.getCategoryById(id);
     if (!existing) {
       sendNotFound(res, 'Category');
       return;
@@ -142,13 +89,7 @@ export async function updateCategory(
 
     // Check for duplicate title if changing
     if (title && title !== existing.title) {
-      const duplicate = await prisma.category.findFirst({
-        where: {
-          title: { equals: title, mode: 'insensitive' },
-          id: { not: id },
-        },
-      });
-
+      const duplicate = await categoryService.categoryTitleExists(title, id);
       if (duplicate) {
         sendError(
           res,
@@ -160,27 +101,12 @@ export async function updateCategory(
       }
     }
 
-    const category = await prisma.category.update({
-      where: { id },
-      data: {
-        ...(title && { title }),
-        ...(description !== undefined && { description: description || null }),
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-      },
+    const category = await categoryService.updateCategory(id, {
+      title,
+      description,
     });
 
-    logger.info({ categoryId: id }, 'Category updated');
-
-    sendSuccess(res, {
-      id: category.id,
-      name: category.title,
-      title: category.title,
-      description: category.description,
-    });
+    sendSuccess(res, category);
   } catch (error) {
     next(error);
   }
@@ -194,30 +120,24 @@ export async function deleteCategory(
   try {
     const { id } = req.params;
 
-    const existing = await prisma.category.findUnique({
-      where: { id },
-      include: { _count: { select: { organizations: true } } },
-    });
+    const canDelete = await categoryService.canDeleteCategory(id);
 
-    if (!existing) {
+    if (!canDelete.canDelete && canDelete.organizationCount === 0) {
       sendNotFound(res, 'Category');
       return;
     }
 
-    // Prevent deletion if category has organizations
-    if (existing._count.organizations > 0) {
+    if (!canDelete.canDelete) {
       sendError(
         res,
         'CATEGORY_IN_USE',
-        `Cannot delete category with ${existing._count.organizations} organization(s). Reassign them first.`,
+        `Cannot delete category with ${canDelete.organizationCount} organization(s). Reassign them first.`,
         400
       );
       return;
     }
 
-    await prisma.category.delete({ where: { id } });
-
-    logger.info({ categoryId: id }, 'Category deleted');
+    await categoryService.deleteCategory(id);
 
     sendSuccess(res, { message: 'Category deleted' });
   } catch (error) {
