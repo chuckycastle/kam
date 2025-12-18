@@ -87,7 +87,12 @@ export async function createCategory(
     });
 
     if (existing) {
-      sendError(res, 'DUPLICATE_CATEGORY', 'A category with this name already exists', 400);
+      sendError(
+        res,
+        'DUPLICATE_CATEGORY',
+        'A category with this name already exists',
+        400
+      );
       return;
     }
 
@@ -145,7 +150,12 @@ export async function updateCategory(
       });
 
       if (duplicate) {
-        sendError(res, 'DUPLICATE_CATEGORY', 'A category with this name already exists', 400);
+        sendError(
+          res,
+          'DUPLICATE_CATEGORY',
+          'A category with this name already exists',
+          400
+        );
         return;
       }
     }
