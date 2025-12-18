@@ -1,0 +1,437 @@
+<%- include('../layouts/main', { body: `
+  <div class="container py-4">
+    <div class="row mb-4">
+      <div class="col">
+        <h1><i class="bi bi-person-circle"></i> My Profile</h1>
+      </div>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <div class="row">
+      <!-- Profile Info Column -->
+      <div class="col-lg-8">
+        <!-- Profile Card -->
+        <div class="card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Profile Information</h5>
+            <button class="btn btn-sm btn-outline-primary" id="edit-profile-btn">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+          </div>
+          <div class="card-body">
+            <div id="profile-loading" class="text-center py-4">
+              <div class="spinner-border" role="status"></div>
+            </div>
+
+            <!-- View Mode -->
+            <div id="profile-view" class="d-none">
+              <div class="row mb-3">
+                <div class="col-sm-3 text-muted">Name</div>
+                <div class="col-sm-9" id="view-name"></div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-sm-3 text-muted">Username</div>
+                <div class="col-sm-9" id="view-username"></div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-sm-3 text-muted">Email</div>
+                <div class="col-sm-9" id="view-email"></div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-sm-3 text-muted">Role</div>
+                <div class="col-sm-9"><span id="view-role" class="badge"></span></div>
+              </div>
+              <div class="row">
+                <div class="col-sm-3 text-muted">Member Since</div>
+                <div class="col-sm-9" id="view-joined"></div>
+              </div>
+            </div>
+
+            <!-- Edit Mode -->
+            <form id="profile-form" class="d-none">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="firstName" class="form-label">First Name</label>
+                  <input type="text" class="form-control" id="firstName" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="lastName" class="form-label">Last Name</label>
+                  <input type="text" class="form-control" id="lastName" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" required minlength="3" maxlength="30" pattern="^[a-zA-Z0-9_]+$">
+                <div class="form-text">Letters, numbers, and underscores only</div>
+              </div>
+              <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" required>
+              </div>
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" id="save-profile-btn">
+                  <span id="save-text">Save Changes</span>
+                  <span id="save-spinner" class="spinner-border spinner-border-sm d-none"></span>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="cancel-edit-btn">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-key"></i> Change Password</h5>
+          </div>
+          <div class="card-body">
+            <div id="password-alert"></div>
+            <form id="password-form">
+              <div class="mb-3">
+                <label for="currentPassword" class="form-label">Current Password</label>
+                <input type="password" class="form-control" id="currentPassword" required>
+              </div>
+              <div class="mb-3">
+                <label for="newPassword" class="form-label">New Password</label>
+                <input type="password" class="form-control" id="newPassword" required minlength="8">
+                <div class="form-text">At least 8 characters with uppercase, lowercase, and a number</div>
+              </div>
+              <div class="mb-3">
+                <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                <input type="password" class="form-control" id="confirmPassword" required>
+              </div>
+              <div id="password-requirements" class="mb-3">
+                <small class="text-muted">Password requirements:</small>
+                <ul class="list-unstyled mb-0 small">
+                  <li id="req-length"><i class="bi bi-x-circle text-danger"></i> At least 8 characters</li>
+                  <li id="req-upper"><i class="bi bi-x-circle text-danger"></i> One uppercase letter</li>
+                  <li id="req-lower"><i class="bi bi-x-circle text-danger"></i> One lowercase letter</li>
+                  <li id="req-number"><i class="bi bi-x-circle text-danger"></i> One number</li>
+                </ul>
+              </div>
+              <button type="submit" class="btn btn-warning" id="change-password-btn">
+                <span id="password-btn-text">Change Password</span>
+                <span id="password-btn-spinner" class="spinner-border spinner-border-sm d-none"></span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats & Organizations Column -->
+      <div class="col-lg-4">
+        <!-- Stats Card -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-bar-chart"></i> My Stats</h5>
+          </div>
+          <div class="card-body">
+            <div class="row text-center">
+              <div class="col-4">
+                <div class="fs-3 fw-bold text-primary" id="stat-orgs">-</div>
+                <small class="text-muted">Organizations</small>
+              </div>
+              <div class="col-4">
+                <div class="fs-3 fw-bold text-success" id="stat-items">-</div>
+                <small class="text-muted">Items</small>
+              </div>
+              <div class="col-4">
+                <div class="fs-3 fw-bold text-info" id="stat-notes">-</div>
+                <small class="text-muted">Notes</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- My Organizations Card -->
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-building"></i> My Organizations</h5>
+            <a href="/organizations" class="btn btn-sm btn-outline-primary">View All</a>
+          </div>
+          <div class="card-body p-0">
+            <div id="orgs-loading" class="text-center py-4">
+              <div class="spinner-border spinner-border-sm" role="status"></div>
+            </div>
+            <ul id="orgs-list" class="list-group list-group-flush d-none"></ul>
+            <div id="orgs-empty" class="text-center py-4 text-muted d-none">
+              <i class="bi bi-inbox fs-1"></i>
+              <p class="mb-0 mt-2">No organizations assigned</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+`, scripts: `
+  <script>
+    let currentUser = null;
+    let userId = null;
+
+    // Initialize
+    async function init() {
+      try {
+        // Get current user
+        const meResponse = await fetch('/api/auth/me');
+        const meData = await meResponse.json();
+        if (!meData.success || !meData.data.user) {
+          window.location.href = '/login';
+          return;
+        }
+        userId = meData.data.user.id;
+
+        // Load profile
+        await loadProfile();
+        await loadOrganizations();
+      } catch (error) {
+        showAlert('Failed to load profile', 'danger');
+      }
+    }
+
+    async function loadProfile() {
+      try {
+        const response = await fetch('/api/users/' + userId);
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error?.message || 'Failed to load profile');
+        }
+
+        currentUser = data.data;
+        displayProfile(currentUser);
+      } catch (error) {
+        showAlert(error.message, 'danger');
+      }
+    }
+
+    function displayProfile(user) {
+      document.getElementById('profile-loading').classList.add('d-none');
+      document.getElementById('profile-view').classList.remove('d-none');
+
+      // View mode
+      document.getElementById('view-name').textContent = user.firstName + ' ' + user.lastName;
+      document.getElementById('view-username').textContent = '@' + user.username;
+      document.getElementById('view-email').textContent = user.email;
+
+      const roleBadge = document.getElementById('view-role');
+      roleBadge.textContent = user.role.replace('_', ' ');
+      roleBadge.className = 'badge ' + getRoleBadgeClass(user.role);
+
+      document.getElementById('view-joined').textContent = new Date(user.createdAt).toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric'
+      });
+
+      // Stats
+      document.getElementById('stat-orgs').textContent = user._count?.organizations || 0;
+      document.getElementById('stat-items').textContent = user._count?.items || 0;
+      document.getElementById('stat-notes').textContent = user._count?.notes || 0;
+
+      // Form fields
+      document.getElementById('firstName').value = user.firstName;
+      document.getElementById('lastName').value = user.lastName;
+      document.getElementById('username').value = user.username;
+      document.getElementById('email').value = user.email;
+    }
+
+    function getRoleBadgeClass(role) {
+      const classes = {
+        'SUPER_ADMIN': 'bg-danger',
+        'ADMIN': 'bg-warning text-dark',
+        'COORDINATOR': 'bg-info',
+        'VOLUNTEER': 'bg-primary',
+        'PUBLIC': 'bg-secondary'
+      };
+      return classes[role] || 'bg-secondary';
+    }
+
+    async function loadOrganizations() {
+      try {
+        const response = await fetch('/api/users/' + userId + '/organizations');
+        const data = await response.json();
+
+        document.getElementById('orgs-loading').classList.add('d-none');
+
+        if (!data.success || !data.data.length) {
+          document.getElementById('orgs-empty').classList.remove('d-none');
+          return;
+        }
+
+        const list = document.getElementById('orgs-list');
+        list.innerHTML = data.data.slice(0, 5).map(org => \`
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <a href="/organizations/\${org.id}" class="text-decoration-none">\${escapeHtml(org.name)}</a>
+              <br><small class="text-muted">\${org._count?.items || 0} items</small>
+            </div>
+            <span class="badge bg-secondary">\${escapeHtml(org.category?.name || 'Uncategorized')}</span>
+          </li>
+        \`).join('');
+        list.classList.remove('d-none');
+      } catch (error) {
+        document.getElementById('orgs-loading').classList.add('d-none');
+        document.getElementById('orgs-empty').classList.remove('d-none');
+      }
+    }
+
+    // Edit mode toggle
+    document.getElementById('edit-profile-btn').addEventListener('click', () => {
+      document.getElementById('profile-view').classList.add('d-none');
+      document.getElementById('profile-form').classList.remove('d-none');
+      document.getElementById('edit-profile-btn').classList.add('d-none');
+    });
+
+    document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+      document.getElementById('profile-form').classList.add('d-none');
+      document.getElementById('profile-view').classList.remove('d-none');
+      document.getElementById('edit-profile-btn').classList.remove('d-none');
+      // Reset form
+      displayProfile(currentUser);
+    });
+
+    // Profile form submission
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const saveBtn = document.getElementById('save-profile-btn');
+      const saveText = document.getElementById('save-text');
+      const saveSpinner = document.getElementById('save-spinner');
+
+      saveBtn.disabled = true;
+      saveText.textContent = 'Saving...';
+      saveSpinner.classList.remove('d-none');
+
+      try {
+        const response = await fetch('/api/users/' + userId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName: document.getElementById('firstName').value.trim(),
+            lastName: document.getElementById('lastName').value.trim(),
+            username: document.getElementById('username').value.trim(),
+            email: document.getElementById('email').value.trim(),
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showAlert('Profile updated successfully', 'success');
+          await loadProfile();
+          document.getElementById('profile-form').classList.add('d-none');
+          document.getElementById('profile-view').classList.remove('d-none');
+          document.getElementById('edit-profile-btn').classList.remove('d-none');
+        } else {
+          showAlert(data.error?.message || 'Failed to update profile', 'danger');
+        }
+      } catch (error) {
+        showAlert('An error occurred', 'danger');
+      } finally {
+        saveBtn.disabled = false;
+        saveText.textContent = 'Save Changes';
+        saveSpinner.classList.add('d-none');
+      }
+    });
+
+    // Password validation
+    const newPasswordInput = document.getElementById('newPassword');
+
+    function updateRequirement(id, met) {
+      const el = document.getElementById(id);
+      const icon = el.querySelector('i');
+      icon.className = met ? 'bi bi-check-circle text-success' : 'bi bi-x-circle text-danger';
+    }
+
+    function validatePassword(password) {
+      updateRequirement('req-length', password.length >= 8);
+      updateRequirement('req-upper', /[A-Z]/.test(password));
+      updateRequirement('req-lower', /[a-z]/.test(password));
+      updateRequirement('req-number', /[0-9]/.test(password));
+
+      return password.length >= 8 &&
+             /[A-Z]/.test(password) &&
+             /[a-z]/.test(password) &&
+             /[0-9]/.test(password);
+    }
+
+    newPasswordInput.addEventListener('input', () => {
+      validatePassword(newPasswordInput.value);
+    });
+
+    // Password form submission
+    document.getElementById('password-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const passwordAlert = document.getElementById('password-alert');
+      const changeBtn = document.getElementById('change-password-btn');
+      const btnText = document.getElementById('password-btn-text');
+      const btnSpinner = document.getElementById('password-btn-spinner');
+
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      passwordAlert.innerHTML = '';
+
+      if (!validatePassword(newPassword)) {
+        passwordAlert.innerHTML = '<div class="alert alert-danger">Password does not meet requirements</div>';
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        passwordAlert.innerHTML = '<div class="alert alert-danger">Passwords do not match</div>';
+        return;
+      }
+
+      changeBtn.disabled = true;
+      btnText.textContent = 'Changing...';
+      btnSpinner.classList.remove('d-none');
+
+      try {
+        const response = await fetch('/api/auth/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          passwordAlert.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> ' + data.data.message + '</div>';
+          document.getElementById('password-form').reset();
+          // Reset requirement indicators
+          ['req-length', 'req-upper', 'req-lower', 'req-number'].forEach(id => {
+            updateRequirement(id, false);
+          });
+        } else {
+          passwordAlert.innerHTML = '<div class="alert alert-danger">' + (data.error?.message || 'Failed to change password') + '</div>';
+        }
+      } catch (error) {
+        passwordAlert.innerHTML = '<div class="alert alert-danger">An error occurred</div>';
+      } finally {
+        changeBtn.disabled = false;
+        btnText.textContent = 'Change Password';
+        btnSpinner.classList.add('d-none');
+      }
+    });
+
+    // Utility functions
+    function showAlert(message, type) {
+      document.getElementById('alert-container').innerHTML = \`
+        <div class="alert alert-\${type} alert-dismissible fade show">
+          \${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      \`;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text || '';
+      return div.innerHTML;
+    }
+
+    // Start
+    init();
+  </script>
+` }) %>

@@ -128,6 +128,17 @@ export function createApp(): Express {
     });
   });
 
+  app.get('/profile', (req, res) => {
+    if (!req.user) {
+      res.redirect('/login');
+      return;
+    }
+    res.render('pages/profile', {
+      title: 'My Profile - KAM',
+      user: req.user,
+    });
+  });
+
   // Organizations pages
   app.get('/organizations', (req, res) => {
     if (!req.user) {
